@@ -16,7 +16,7 @@ The convenient `loguru` library is used for logging. Thanks to this, the logs ar
 The project follows an architecture inspired by microservices and FastAPI best practices. Each functional component of the bot is organized as a mini-service, which ensures modularity of development and maintenance.
 
 ## Project Structure
-
+```
 ├── bot/
 │   ├── migration/
 │   │   ├── versions
@@ -40,7 +40,7 @@ The project follows an architecture inspired by microservices and FastAPI best p
 ├── .env
 ├── docker-compose.yml
 └── requirements.txt
-
+```
 
 ## Environment Variables
 
