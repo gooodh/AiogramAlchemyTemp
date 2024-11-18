@@ -45,4 +45,37 @@ The project follows an architecture inspired by microservices and FastAPI best p
 ## Environment Variables
 
 Create a file named `.env` at the root of the project with the following content:
+```
+BOT_TOKEN=your_bot_token_here
+ADMIN_IDS=[12345,344334]
+POSTGRES_USER=postgres_container
+POSTGRES_PASSWORD=postgres_container
+POSTGRES_HOST=172.18.0.2
+POSTGRES_PORT=5432
+POSTGRES_DB=postgres
+```
+
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone git@github.com:gooodh/AiogramAlchemyTemp.git
+   cd your-repo-name
+
+2. Create a virtual environment and activate it:
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate
+3. Install the required packages:
+    ```bash
+    pip install -r requirements.txt
+    Set up the database:
+4. Postgres and pgadmin start in docker:
+   ```bash
+   docker compose up -d --build
+6. Run migrations using Alembic:
+    ```bash
+
+    alembic upgrade head
 
