@@ -4,7 +4,7 @@ docker compose down
 docker compose down -v
 docker exec bot_postgres_container hostname -I или -i
 
-alembic init -t async migration
+alembic init -t async bot/migration
 
 ; Измененный код migration/env.py
 ; import asyncio
@@ -60,8 +60,7 @@ alembic init -t async migration
 ;     run_migrations_offline()
 ; else:
 ;     run_migrations_online()
-alembic init /home/nikulin/project/python/AiogramAlchemyTemp/bot/migration
-alembic init bot/migration
+
 
 alembic.ini -> sqlalchemy.url = sqlite+aiosqlite:///data/db.sqlite3
 alembic.ini -> sqlalchemy.url = postgresql://postgres_container:postgres_container@172.18.0.2:5432/postgres
