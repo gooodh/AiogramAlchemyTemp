@@ -3,7 +3,8 @@ from loguru import logger
 from aiogram.types import Message
 from aiogram.dispatcher.router import Router
 
-from database import connection
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from users.dao import UserDAO
 from users.schemas import TelegramIDModel, UserModel
 from users.utils import get_refer_id_or_none
@@ -12,42 +13,44 @@ user_router = Router()
 
 
 @user_router.message(CommandStart())
-@connection()
-async def cmd_start(message: Message, command: CommandObject, session, **kwargs):
+async def cmd_start(
+    message: Message, command: CommandObject, session_with_commit: AsyncSession
+):
     try:
-        user_id = message.from_user.id
-        user_data = UserModel(
-            telegram_id=message.from_user.id,
-            username=message.from_user.username,
-            first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name,
-            referral_id=None,
+        user = message.from_user
+        user_info = await UserDAO.find_one_or_none(
+            session=session_with_commit, filters=TelegramIDModel(telegram_id=user.id)
         )
-        user_info = await UserDAO.add(session=session, values=user_data)
+        ref_id = get_refer_id_or_none(command_args=command.args, user_id=user.id)
 
-        if user_info:
-            await message.answer(
-                f"👋 Привет, {message.from_user.full_name}! Выберите необходимое действие"
+        if user_info is None or not user_info.telegram_id:
+            user_data = UserModel(
+                telegram_id=user.id,
+                username=user.username,
+                referral_id=ref_id,
             )
-            return
 
-        # Определение реферального ID
-        ref_id = get_refer_id_or_none(command_args=command.args, user_id=user_id)
-        values = UserModel(
-            telegram_id=user_id,
-            username=message.from_user.username,
-            first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name,
-            referral_id=ref_id,
-        )
-        await UserDAO.add(session=session, values=values)
-        # Формирование сообщения
-        ref_message = (
-            f" Вы успешно закреплены за пользователем с ID {ref_id}" if ref_id else ""
-        )
-        msg = f"🎉 <b>Благодарим за регистрацию!{ref_message}</b>."
+            await UserDAO.add(session=session_with_commit, values=user_data)
+            message_text = f"<b>👋 Привет, {message.from_user.full_name}!</b>"
+            if ref_id:
+                message_text += f" Вы успешно закреплены за пользователем с ID {ref_id}."
 
-        await message.answer(msg)
+            await message.answer(message_text)
+            
+        else:
+            user_data = UserModel(
+                telegram_id=user.id,
+                username=user.username,
+            )
+            await UserDAO.update(
+                session=session_with_commit,
+                filters=TelegramIDModel(telegram_id=user.id),
+                values=user_data,
+            )
+            
+            await message.answer(
+                f"<b>👋 Привет, {message.from_user.full_name} я рад что ты вернулся!</b>"
+            )
 
     except Exception as e:
         logger.error(

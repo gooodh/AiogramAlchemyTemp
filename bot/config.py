@@ -11,7 +11,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     BOT_TOKEN: str
     ADMIN_IDS: List[int]
-    FORMAT_LOG: str = "{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}"
+    FORMAT_LOG: str = (
+        "{time:YYYY-MM-DD at HH:mm:ss} | {level} | {name}:{function}:{line} - {message}"
+    )
     LOG_ROTATION: str = "10 MB"
     DB_URL: str = 'sqlite+aiosqlite:///data/db.sqlite3'
 
@@ -36,7 +38,7 @@ bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=Pars
 dp = Dispatcher(storage=MemoryStorage())
 admins = settings.ADMIN_IDS
 
-log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.txt")
+log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.log")
 logger.add(log_file_path, format=settings.FORMAT_LOG, level="INFO", rotation=settings.LOG_ROTATION)
 DATABASE_LITE_URL = settings.DB_URL
 DATABASE_PG_URL = "postgresql+asyncpg://postgres_container:postgres_container@172.18.0.2:5432/postgres"

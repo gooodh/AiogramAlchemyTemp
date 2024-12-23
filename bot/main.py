@@ -1,5 +1,6 @@
 import asyncio
 from aiogram.types import BotCommand, BotCommandScopeDefault
+from dao.database_middleware import DatabaseMiddlewareWithCommit, DatabaseMiddlewareWithoutCommit
 from loguru import logger
 
 from config import bot, admins, dp
@@ -34,6 +35,9 @@ async def stop_bot():
 
 
 async def main():
+        # регистрация мидлварей
+    dp.update.middleware.register(DatabaseMiddlewareWithoutCommit())
+    dp.update.middleware.register(DatabaseMiddlewareWithCommit())
     # регистрация роутеров
     dp.include_router(user_router)
 

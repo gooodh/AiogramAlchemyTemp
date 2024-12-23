@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
+from typing import Optional
+
 
 class TelegramIDModel(BaseModel):
     telegram_id: int
@@ -9,6 +11,7 @@ class TelegramIDModel(BaseModel):
 
 class UserModel(TelegramIDModel):
     username: str | None
-    first_name: str | None
-    last_name: str | None
-    referral_id: str | None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    referral_id: Optional[str] = None
+
