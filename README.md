@@ -47,6 +47,9 @@ The project follows an architecture inspired by microservices and FastAPI best p
 Create a file named `.env` at the root of the project with the following content:
 ```
 BOT_TOKEN=your_bot_token_here
+PORT=8080
+HOST=0.0.0.0
+BASE_URL=https://######.duckdns.org
 ADMIN_IDS=[12345,344334]
 POSTGRES_USER=postgres_container
 POSTGRES_PASSWORD=postgres_container
