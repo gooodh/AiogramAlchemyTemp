@@ -1,55 +1,74 @@
 import asyncio
-import tracemalloc
-from aiohttp import web
+from contextlib import asynccontextmanager
+
 from loguru import logger
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from config import BASE_URL, HOST, PORT, WEBHOOK_PATH, bot, dp
-from users.router import user_router
-from bot_utils import start_bot, stop_bot, register_middlewares
+from pydantic import ValidationError
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from fastapi import FastAPI, Request, Response
+
+from aiogram.types import Update
+from aiogram.exceptions import TelegramRetryAfter
+
+from bot.bot_utils import register_middlewares, start_bot, stop_bot
+from bot.config import settings, dp, bot
+
+from bot.dao.database import async_session_maker
 
 
-async def main():
-    tracemalloc.start()
+# Зависимость для получения AsyncSession
+async def get_session() -> AsyncSession:
+    async with async_session_maker() as session:
+        yield session
 
-    # Регистрация middleware и роутеров
-    register_middlewares(dp)  # Используем функцию для регистрации middleware
-    dp.include_router(user_router)
 
-    app = web.Application()
-    webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-    setup_application(app, dp, bot=bot)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await register_middlewares(dp)
 
-    # Установка вебхука и логирование результата
+    await start_bot()
+    webhook_url = settings.hook_url
     try:
-        response = await bot.set_webhook(f"{BASE_URL}{WEBHOOK_PATH}")
-        if response:
-            logger.info(f"Вебхук успешно установлен: {response}.")
+        webhook_info = await bot.get_webhook_info()
+        if webhook_info.url != webhook_url:
+            await bot.set_webhook(
+                url=webhook_url,
+                allowed_updates=dp.resolve_used_update_types(),
+                drop_pending_updates=True,
+            )
+            logger.success(f"Вебхук установлен: {webhook_url}")
         else:
-            logger.warning("Вебхук не установлен, ответ пуст.")
+            logger.info("Вебхук уже установлен, повторная установка не требуется.")
+    except TelegramRetryAfter as e:
+        logger.warning(
+            f"Ошибка установки вебхука: {e}. Повторная попытка через {e.retry_after} секунд."
+        )
+        await asyncio.sleep(e.retry_after)
     except Exception as e:
         logger.error(f"Ошибка при установке вебхука: {e}")
 
-    # Запускаем веб-сервер
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, host=HOST, port=PORT)
-    await site.start()
+    yield
+    await stop_bot()
 
+
+app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/")
+async def root():
+    return {"message": "Not Found"}, 404
+
+
+@app.post("/webhook")
+async def webhook(request: Request) -> None:
+    logger.debug(f"Получен запрос: {await request.json()}")
     try:
-        await start_bot()
-        while True:
-            await asyncio.sleep(3600)  # Ждем 1 час
-    except KeyboardInterrupt:
-        pass
-    finally:
-        await stop_bot()
-        await runner.cleanup()
-        logger.info("Ресурсы очищены.")
-
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Программа завершена пользователем.")
+        logger.info("Получен запрос с вебхука.")
+        update_data = await request.json()
+        update = Update.model_validate(update_data, context={"bot": bot})
+        await dp.feed_update(bot, update)
+        logger.info("Обновление успешно обработано.")
+        return Response(status_code=200)
+    except Exception as e:
+        logger.error(f"Ошибка при обработке обновления: {e}")

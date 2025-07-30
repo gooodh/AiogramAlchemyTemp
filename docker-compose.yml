@@ -1,16 +1,14 @@
-
 services:
   postgres:
     image: postgres:15
     container_name: bot_postgres_container
     restart: always
     env_file:
-            - .env
+      - .env
     volumes:
-      - bot_postgres:/var/lib/postgresql/data
+      - bot_temp_postgres:/var/lib/postgresql/data
     ports:
-    - 5432:5432
-
+      - 5432:5432
 
   pgadmin:
     image: dpage/pgadmin4
@@ -24,8 +22,8 @@ services:
     volumes:
       - bot_pgadmin:/var/lib/pgadmin
     depends_on:
-     - postgres
+      - postgres
 
 volumes:
- bot_postgres:
- bot_pgadmin:
+  bot_temp_postgres:
+  bot_pgadmin:

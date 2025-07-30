@@ -1,13 +1,13 @@
 import asyncio
 
-from bot_utils import register_middlewares, start_bot, stop_bot
-from config import bot, dp
-from users.router import user_router
+from bot.bot_utils import register_middlewares, start_bot, stop_bot
+from bot.config import bot, dp
+from bot.users.router import user_router
 
 
 async def main():
     # Регистрация middleware и роутеров
-    register_middlewares(dp)  # Используем функцию для регистрации middleware
+    await register_middlewares(dp)  # Используем функцию для регистрации middleware
     dp.include_router(user_router)
 
     # Регистрация функций

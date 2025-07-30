@@ -5,9 +5,9 @@ from aiogram.dispatcher.router import Router
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from users.dao import UserDAO
-from users.schemas import TelegramIDModel, UserModel
-from users.utils import get_refer_id_or_none
+from bot.users.dao import UserDAO
+from bot.users.schemas import TelegramIDModel, UserModel
+from bot.users.utils import get_refer_id_or_none
 
 user_router = Router()
 
@@ -33,10 +33,12 @@ async def cmd_start(
             await UserDAO.add(session=session_with_commit, values=user_data)
             message_text = f"<b>👋 Привет, {message.from_user.full_name}!</b>"
             if ref_id:
-                message_text += f" Вы успешно закреплены за пользователем с ID {ref_id}."
+                message_text += (
+                    f" Вы успешно закреплены за пользователем с ID {ref_id}."
+                )
 
             await message.answer(message_text)
-            
+
         else:
             user_data = UserModel(
                 telegram_id=user.id,
@@ -47,7 +49,7 @@ async def cmd_start(
                 filters=TelegramIDModel(telegram_id=user.id),
                 values=user_data,
             )
-            
+
             await message.answer(
                 f"<b>👋 Привет, {message.from_user.full_name} я рад что ты вернулся!</b>"
             )

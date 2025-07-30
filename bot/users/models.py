@@ -2,7 +2,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import BigInteger
 
 from typing import Optional
-from dao.database import Base
+from bot.dao.database import Base
 
 
 class User(Base):

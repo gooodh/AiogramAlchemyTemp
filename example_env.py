@@ -3,11 +3,11 @@ from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
-from bot.dao.database import Base, DATABASE_PG_URL
+from bot.dao.database import Base, DATABASE_PG_URL, DATABASE_LITE_URL
 from bot.users.models import User  # Импортируйте ваши модели
 
 config = context.config
-config.set_main_option("sqlalchemy.url", DATABASE_PG_URL)
+config.set_main_option("sqlalchemy.url", DATABASE_LITE_URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
